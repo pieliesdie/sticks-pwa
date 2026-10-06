@@ -1,7 +1,7 @@
+import getTodayCount from '../getTodayCount';
+
 export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entries, onClear, packPrice, setPackPrice, sticksPerPack, setSticksPerPack, dailyLimit, setDailyLimit }) {
-  const todayCount = entries.filter(e => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return e.date >= d;
-  }).length;
+  const todayCount = getTodayCount(entries);
 
   return (
     <div className="page settings-page">
@@ -14,9 +14,9 @@ export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entr
               <span className="settings-row-sub">Минимальное время ожидания</span>
             </div>
             <div className="stepper">
-              <button className="stepper-btn" onClick={() => setIntervalMinutes(v => Math.max(1, v - 5))}>−</button>
-              <span className="stepper-val">{intervalMinutes}</span>
-              <button className="stepper-btn" onClick={() => setIntervalMinutes(v => v + 5)}>+</button>
+              <button className="stepper-btn" aria-label="Уменьшить интервал" onClick={() => setIntervalMinutes(v => Math.max(1, v - 5))}>−</button>
+              <span className="stepper-val" aria-label={`${intervalMinutes} минут`}>{intervalMinutes}</span>
+              <button className="stepper-btn" aria-label="Увеличить интервал" onClick={() => setIntervalMinutes(v => v + 5)}>+</button>
             </div>
           </div>
         </div>
@@ -31,9 +31,9 @@ export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entr
               <span className="settings-row-sub">Стоимость пачки стиков</span>
             </div>
             <div className="stepper">
-              <button className="stepper-btn" onClick={() => setPackPrice(v => Math.max(0, v - 10))}>−</button>
+              <button className="stepper-btn" aria-label="Уменьшить цену пачки" onClick={() => setPackPrice(v => Math.max(0, v - 10))}>−</button>
               <span className="stepper-val">{packPrice}</span>
-              <button className="stepper-btn" onClick={() => setPackPrice(v => v + 10)}>+</button>
+              <button className="stepper-btn" aria-label="Увеличить цену пачки" onClick={() => setPackPrice(v => v + 10)}>+</button>
             </div>
           </div>
           <div className="settings-divider" />
@@ -43,9 +43,9 @@ export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entr
               <span className="settings-row-sub">Количество стиков в одной пачке</span>
             </div>
             <div className="stepper">
-              <button className="stepper-btn" onClick={() => setSticksPerPack(v => Math.max(1, v - 1))}>−</button>
+              <button className="stepper-btn" aria-label="Уменьшить число стиков в пачке" onClick={() => setSticksPerPack(v => Math.max(1, v - 1))}>−</button>
               <span className="stepper-val">{sticksPerPack}</span>
-              <button className="stepper-btn" onClick={() => setSticksPerPack(v => v + 1)}>+</button>
+              <button className="stepper-btn" aria-label="Увеличить число стиков в пачке" onClick={() => setSticksPerPack(v => v + 1)}>+</button>
             </div>
           </div>
         </div>
@@ -60,9 +60,9 @@ export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entr
               <span className="settings-row-sub">Максимум стиков в день</span>
             </div>
             <div className="stepper">
-              <button className="stepper-btn" onClick={() => setDailyLimit(v => Math.max(1, v - 1))}>−</button>
+              <button className="stepper-btn" aria-label="Уменьшить дневной лимит" onClick={() => setDailyLimit(v => Math.max(1, v - 1))}>−</button>
               <span className="stepper-val">{dailyLimit}</span>
-              <button className="stepper-btn" onClick={() => setDailyLimit(v => v + 1)}>+</button>
+              <button className="stepper-btn" aria-label="Увеличить дневной лимит" onClick={() => setDailyLimit(v => v + 1)}>+</button>
             </div>
           </div>
         </div>
@@ -86,13 +86,13 @@ export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entr
       <div className="settings-section">
         <div className="settings-title">Данные</div>
         <div className="settings-card">
-          <div className="settings-row" style={{ cursor: 'pointer' }} onClick={onClear}>
+          <button className="settings-row settings-danger" onClick={onClear}>
             <div className="settings-row-info">
               <span className="settings-row-label" style={{ color: 'var(--md-error)' }}>Очистить все записи</span>
               <span className="settings-row-sub">Действие необратимо</span>
             </div>
-            <span style={{ fontSize: 20 }}>🗑️</span>
-          </div>
+            <span aria-hidden="true">✕</span>
+          </button>
         </div>
       </div>
     </div>

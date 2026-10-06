@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
+import stickNoun from '../components/stickNoun';
 
 export default function HistoryPage({ entries, onDelete }) {
   const [collapsedDays, setCollapsedDays] = useState({});
@@ -38,7 +39,7 @@ export default function HistoryPage({ entries, onDelete }) {
   if (!grouped.length) return (
     <div className="page">
       <div className="empty">
-        <div className="empty-icon">📋</div>
+        <div className="empty-icon" aria-hidden="true">—</div>
         <p>История пуста</p>
       </div>
     </div>
@@ -49,7 +50,6 @@ export default function HistoryPage({ entries, onDelete }) {
       <div className="entries">
         {scrollParent && (
           <Virtuoso
-            useWindowScroll
             customScrollParent={scrollParent}
             data={grouped}
             overscan={200}
@@ -57,40 +57,42 @@ export default function HistoryPage({ entries, onDelete }) {
               const collapsed = collapsedDays[day];
               const hourCounts = Array(24).fill(0);
               list.forEach(e => hourCounts[e.date.getHours()]++);
-              const maxCount = Math.max(...hourCounts, 1);
-              const selectedHour = selectedHourMap[day];
+               const maxCount = Math.max(...hourCounts, 1);
+               const selectedHour = selectedHourMap[day];
+               const isToday = formatDay(day) === 'Сегодня';
 
               return (
                 <div key={day} className="day-group show" style={{ marginBottom: '16px' }}>
                   <button
                     className="day-header"
                     onClick={() => setCollapsedDays(p => ({ ...p, [day]: !p[day] }))}
+                    aria-expanded={!collapsed}
                   >
                     <div className="day-header-left">
                       <span className="day-date">{formatDay(day)}</span>
                       <span className="day-count-chip">{list.length}</span>
                     </div>
-                    <span className="arrow" style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▾</span>
+                    <span className="arrow" aria-hidden="true" style={{ transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▾</span>
                   </button>
 
                   {!collapsed && (
                     <div className="day-content">
                       <div>
-                        <div className="hist-label" style={{ marginBottom: 8 }}>По часам</div>
+                        <div className="hist-label">По часам · листайте вбок{selectedHour != null && ` · ${selectedHour}:00 — ${hourCounts[selectedHour]} шт`}</div>
                         <div className="day-histogram">
                           {hourCounts.map((count, hour) => {
                             const isSelected = selectedHour === hour;
-                            const isCurrent = hour === currentHour;
+                            const isCurrent = isToday && hour === currentHour;
                             const barH = count > 0 ? Math.max((count / maxCount) * 64, 6) : 2;
                             return (
-                              <div key={hour} className="hour-bar-container" style={{ position: 'relative' }}>
-                                {isSelected && count > 0 && <div className="tooltip">{count}</div>}
-                                <div
+                              <div key={hour} className="hour-bar-container">
+                                <button
+                                  type="button"
                                   className={`hour-bar${isCurrent ? ' current-hour' : ''}${isSelected ? ' selected' : ''}${count === 0 ? ' empty-bar' : ''}`}
-                                  style={{ height: `${barH}px` }}
+                                  aria-label={`${hour}:00 — ${count} ${stickNoun(count)}`}
+                                  aria-pressed={isSelected}
                                   onClick={() => setSelectedHourMap(p => ({ ...p, [day]: p[day] === hour ? null : hour }))}
-                                  title={`${hour}:00 — ${count} шт`}
-                                />
+                                ><span style={{ height: `${barH}px` }} /></button>
                                 <div className={`hour-label${isCurrent ? ' active' : ''}`}>
                                   {hour % 6 === 0 ? hour : ''}
                                 </div>
@@ -101,43 +103,26 @@ export default function HistoryPage({ entries, onDelete }) {
                       </div>
 
                       <div className="day-entries">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th className="left-align" style={{ width: 40 }}>№</th>
-                              <th>Время</th>
-                              <th style={{ width: 48 }}></th>
-                            </tr>
-                          </thead>
-                          <tbody>
+                        <div className="hist-label">Записи</div>
+                        <ol className="entry-list">
                             {list.map((e, i) => {
                               const gapMinutes = i < list.length - 1
                                 ? Math.round((list[i].date.getTime() - list[i + 1].date.getTime()) / 60000)
                                 : null;
                               return (
-                              <tr key={e.id}>
-                                <td className="left-align">
-                                  <span className="entry-number">{list.length - i}</span>
-                                </td>
-                                <td>
-                                  <span className="time-badge">
+                              <li className="entry-item" key={e.id}>
+                                <span className="entry-number" aria-label={`Запись ${list.length - i}`}>{list.length - i}</span>
+                                <div className="entry-details">
+                                  <span className="entry-time">
                                     {new Date(e.iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
-                                  {e.tag && <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.7 }}>[{e.tag}]</span>}
-                                  {gapMinutes !== null && (
-                                    <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.5 }}>
-                                      ↑{gapMinutes} мин
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="right-align">
-                                  <button className="btn-delete" onClick={() => onDelete(e.id)}>✕</button>
-                                </td>
-                              </tr>
+                                  {(e.tag || gapMinutes !== null) && <span className="entry-meta">{[e.tag, gapMinutes !== null ? `Через ${gapMinutes} мин после предыдущей` : null].filter(Boolean).join(' · ')}</span>}
+                                </div>
+                                <button className="btn-delete" aria-label={`Удалить запись за ${new Date(e.iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`} onClick={() => onDelete(e.id)}>✕</button>
+                              </li>
                               );
                             })}
-                          </tbody>
-                        </table>
+                        </ol>
                       </div>
                     </div>
                   )}

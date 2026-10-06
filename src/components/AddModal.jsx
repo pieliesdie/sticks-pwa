@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import useDialogFocus from './useDialogFocus';
 
 export default function AddModal({ open, onClose, onAdd, tag }) {
+  const dialogRef = useRef(null);
+  useDialogFocus(dialogRef, open, onClose);
   const [customDate, setCustomDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [customTime, setCustomTime] = useState(() => {
     const n = new Date();
@@ -15,19 +18,19 @@ export default function AddModal({ open, onClose, onAdd, tag }) {
   if (!open) return null;
   return (
     <div className="modal-overlay show" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal" ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="add-title" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>Добавить запись</h2>
+          <h2 id="add-title">Добавить запись</h2>
           <p>Выберите дату и время</p>
         </div>
         <div className="modal-controls">
           <div className="md-field">
-            <label>Дата</label>
-            <input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} />
+            <label htmlFor="entry-date">Дата</label>
+            <input id="entry-date" type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} />
           </div>
           <div className="md-field">
-            <label>Время</label>
-            <input type="time" value={customTime} onChange={e => setCustomTime(e.target.value)} />
+            <label htmlFor="entry-time">Время</label>
+            <input id="entry-time" type="time" value={customTime} onChange={e => setCustomTime(e.target.value)} />
           </div>
         </div>
         <div className="modal-buttons">

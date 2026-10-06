@@ -1,23 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AddModal from '../components/AddModal';
+import useDialogFocus from '../components/useDialogFocus';
+import stickNoun from '../components/stickNoun';
+import getTodayCount from '../getTodayCount';
 
 const TAG_OPTIONS = [
-  { label: 'Стресс', icon: '🤯' },
-  { label: 'Кофе', icon: '☕' },
-  { label: 'Скука', icon: '🥱' },
-  { label: 'Привычка', icon: '🔄' },
-  { label: 'Перекур', icon: '🚬' }
+  'Стресс', 'Кофе', 'Скука', 'Привычка', 'Перекур'
 ];
 
 export default function HomePage({ entries, intervalMinutes, onAdd, showSnack, timeSinceLast, moneySpentToday, moneySpentTotal, dailyLimit }) {
   const [showModal, setShowModal] = useState(false);
   const [showTagSheet, setShowTagSheet] = useState(false);
+  const tagDialogRef = useRef(null);
+  useDialogFocus(tagDialogRef, showTagSheet, () => setShowTagSheet(false));
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     const id = setInterval(() => {
       setNow(Date.now());
-    }, 1000); // обновление каждую секунду
+    }, 1000);
 
     return () => clearInterval(id);
   }, []);
@@ -27,22 +28,15 @@ export default function HomePage({ entries, intervalMinutes, onAdd, showSnack, t
   const diffMin = last ? (now - last.date.getTime()) / 60000 : null;
   const canSmoke = diffMin === null || diffMin >= intervalMinutes;
   const remaining = diffMin !== null ? Math.max(0, Math.ceil(intervalMinutes - diffMin)) : 0;
-  const progress = diffMin !== null ? Math.min(diffMin / intervalMinutes, 1) : 1;
+  const progress = diffMin !== null ? Math.min(diffMin / intervalMinutes, 1) : 0;
   const displayRemaining = remaining > intervalMinutes ? intervalMinutes : remaining;
 
-  const todayCount = entries.filter(e => {
-    const d = new Date(); d.setHours(0, 0, 0, 0); return e.date >= d;
-  }).length;
-
-  const R = 52, C = 2 * Math.PI * R;
-  const progressClamped = Math.min(Math.max(progress, 0), 1);
-  const offset = C * (1 - progressClamped);
+  const todayCount = getTodayCount(entries);
 
   const progressLimit = dailyLimit > 0 ? Math.min(todayCount / dailyLimit, 1) : 0;
-  const offsetLimit = C * (1 - progressLimit);
-  const isOverLimit = todayCount >= dailyLimit;
+  const isOverLimit = todayCount > dailyLimit;
 
-  function handleAddClick() { 
+  function handleAddClick() {
     if (navigator.vibrate) navigator.vibrate(50);
     setShowTagSheet(true);
   }
@@ -51,176 +45,78 @@ export default function HomePage({ entries, intervalMinutes, onAdd, showSnack, t
     if (navigator.vibrate) navigator.vibrate(50);
     onAdd(new Date(), tagLabel);
     setShowTagSheet(false);
-    showSnack('Добавлено 🚬', '');
+    showSnack('Запись добавлена');
   }
 
   function checkTimer() {
     if (navigator.vibrate) navigator.vibrate(20);
-    if (!entries.length) { showSnack('Нет записей', '📭'); return; }
-    if (canSmoke) showSnack('Можно курнуть! 🚬', '');
-    else showSnack(`Подожди ещё ${displayRemaining} мин ⏳`, '');
+    if (!entries.length) { showSnack('Пока нет записей'); return; }
+    if (canSmoke) showSnack('Интервал прошёл');
+    else showSnack(`До конца интервала: ${displayRemaining} мин`);
   }
 
   return (
     <div className="page home-page">
-      <div className="page-content">
-        {/* Progress rings card */}
-        <div className="status-card">
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-            {/* Main Timer Ring */}
-            <div className="ring-wrap" style={{ flexShrink: 0 }}>
-              <svg width="128" height="128" viewBox="0 0 128 128">
-              {!canSmoke && (
-                <>
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r={R}
-                    fill="none"
-                    stroke="var(--md-outline-variant)"
-                    strokeWidth="12"
-                  />
-                  <circle
-                    cx="64"
-                    cy="64"
-                    r={R}
-                    fill="none"
-                    stroke="var(--md-error)"
-                    strokeWidth="12"
-                    strokeLinecap="round"
-                    strokeDasharray={C}
-                    strokeDashoffset={offset}
-                    transform="rotate(-90 64 64)"
-                    style={{
-                      transition: 'stroke-dashoffset 1.2s cubic-bezier(0,0,0,1), stroke .4s',
-                    }}
-                  />
-                </>
-              )}
-            </svg>
-            <div className="ring-inner">
-              <span className="ring-emoji">
-                {canSmoke ? '✅' : '⏳'}
-              </span>
-              <span className="ring-label">
-                {canSmoke ? 'Можно!' : `${displayRemaining} мин`}
-              </span>
-            </div>
-          </div>
-
-          {/* Daily Limit Ring */}
-          <div className="ring-wrap" style={{ transform: 'scale(0.85)', flexShrink: 0 }}>
-            <svg width="128" height="128" viewBox="0 0 128 128">
-              <circle
-                cx="64"
-                cy="64"
-                r={R}
-                fill="none"
-                stroke="var(--md-outline-variant)"
-                strokeWidth="12"
-              />
-              <circle
-                cx="64"
-                cy="64"
-                r={R}
-                fill="none"
-                stroke={isOverLimit ? "var(--md-error)" : "var(--md-primary)"}
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray={C}
-                strokeDashoffset={offsetLimit}
-                transform="rotate(-90 64 64)"
-                style={{
-                  transition: 'stroke-dashoffset 1.2s cubic-bezier(0,0,0,1), stroke .4s',
-                }}
-              />
-            </svg>
-            <div className="ring-inner">
-              <span className="ring-emoji">
-                {isOverLimit ? '🛑' : '🎯'}
-              </span>
-              <span className="ring-label">
-                {todayCount} / {dailyLimit}
-              </span>
-            </div>
-          </div>
+      <div className="status-card">
+        <div className="status-heading">Сегодня</div>
+        <div className="daily-total">
+          <span className="daily-count">{todayCount}</span>
+          <span className="daily-of">лимит {dailyLimit} {stickNoun(dailyLimit)}</span>
         </div>
-
-        <div className="stat-row" style={{ flexWrap: 'wrap' }}>
-          <div className="stat-pill" style={{ minWidth: '30%' }}>
-            <span className="stat-n">{entries.length}</span>
-            <span className="stat-l">всего шт</span>
-          </div>
-          <div className="stat-pill" style={{ minWidth: '30%' }}>
-            <span className="stat-n">{Math.round(moneySpentTotal || 0)}₽</span>
-            <span className="stat-l">всего</span>
-          </div>
-          <div className="stat-pill" style={{ minWidth: '30%' }}>
-            <span className="stat-n">{todayCount}</span>
-            <span className="stat-l">сегодня шт</span>
-          </div>
-          <div className="stat-pill" style={{ minWidth: '30%' }}>
-            <span className="stat-n">{Math.round(moneySpentToday || 0)}₽</span>
-            <span className="stat-l">сегодня</span>
-          </div>
-          {last && (
-            <div className="stat-pill" style={{ minWidth: '30%' }}>
-              <span className="stat-n">
-                {last.date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-              <span className="stat-l">последний</span>
-            </div>
-          )}
+        <div className="progress-track" role="progressbar" aria-label="Дневной лимит" aria-valuemin={0} aria-valuemax={dailyLimit} aria-valuenow={Math.min(todayCount, dailyLimit)} aria-valuetext={`Сегодня ${todayCount} ${stickNoun(todayCount)}; лимит ${dailyLimit} ${stickNoun(dailyLimit)}`}>
+          <span className={isOverLimit ? 'progress-fill over-limit' : 'progress-fill'} style={{ width: `${progressLimit * 100}%` }} />
         </div>
+        <div className="status-foot">Расход сегодня <strong>{Math.round(moneySpentToday || 0)} ₽</strong></div>
       </div>
 
-      {/* Buttons */}
-      <div className="home-actions" style={{ marginTop: '16px' }}>
+      <div className="interval-card">
+        <div className="interval-heading">Интервал · {intervalMinutes} мин</div>
+        <div className="interval-value">{!last ? 'Пока нет записей' : canSmoke ? 'Интервал прошёл' : `Осталось ${displayRemaining} мин`}</div>
+        <div className="interval-track" aria-hidden="true"><span style={{ width: `${Math.max(0, progress) * 100}%` }} /></div>
+        {last && <div className="interval-caption">Последняя запись в {last.date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>}
+      </div>
+
+      <div className="home-actions">
         <button className="btn-filled home-btn" onClick={handleAddClick}>
-          <span>＋</span> Добавить сейчас
+          <span aria-hidden="true">＋</span> Добавить сейчас
         </button>
         <button className="btn-tonal home-btn" onClick={() => setShowModal(true)}>
-          <span>🕐</span> Указать время
+          Указать дату и время
         </button>
-        <button className={`home-btn ${canSmoke ? 'btn-tonal-green' : 'btn-outlined'}`} onClick={checkTimer}>
-          <span>🔔</span> Проверить таймер
+        <button className="btn-text home-btn" onClick={checkTimer}>
+          Проверить интервал
         </button>
       </div>
-      </div>
+
+      <div className="summary-line"><span>Всего записей <strong>{entries.length}</strong></span><span>Расход за всё время <strong>{Math.round(moneySpentTotal || 0)} ₽</strong></span></div>
 
       <AddModal open={showModal} onClose={() => setShowModal(false)} onAdd={onAdd} tag={null} />
 
-      {/* Tag Bottom Sheet */}
-      <div className={`modal-overlay ${showTagSheet ? 'show' : ''}`} onClick={() => setShowTagSheet(false)}>
-        <div className="modal" onClick={e => e.stopPropagation()} style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}>
+      {showTagSheet && <div className="modal-overlay show" onClick={() => setShowTagSheet(false)}>
+        <div className="modal" ref={tagDialogRef} role="dialog" aria-modal="true" aria-labelledby="tag-title" onClick={e => e.stopPropagation()}>
           <div className="modal-header">
-            <h2>Почему курим?</h2>
-            <p>Выбери причину или пропусти</p>
+            <h2 id="tag-title">Причина записи</h2>
+            <p>Выберите причину или пропустите этот шаг</p>
           </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '12px', margin: '16px 0' }}>
-            {TAG_OPTIONS.map(t => (
+          <div className="tag-options">
+            {TAG_OPTIONS.map(label => (
               <button
-                key={t.label}
-                className="btn-tonal"
-                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '16px 8px', borderRadius: '20px', border: 'none', cursor: 'pointer' }}
-                onClick={() => confirmAdd(t.label)}
+                key={label}
+                className="tag-option"
+                onClick={() => confirmAdd(label)}
               >
-                <span style={{ fontSize: '28px' }}>{t.icon}</span>
-                <span style={{ fontSize: '11px', fontWeight: '600' }}>{t.label}</span>
+                {label}
               </button>
             ))}
           </div>
-
-          <button 
-            className="btn-outlined home-btn" 
-            style={{ width: '100%' }}
+          <button
+            className="btn-text home-btn"
             onClick={() => confirmAdd(null)}
           >
             Пропустить
           </button>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
