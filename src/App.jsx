@@ -6,9 +6,12 @@ import HomePage from './pages/HomePage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import useStickData from './useStickData';
+import IconSticks from './components/icons/IconSticks';
+import useTheme from './useTheme';
 
 export default function SticksApp() {
   const [page, setPage] = useState('home');
+  const { themeStyle, setThemeStyle, themeMode, setThemeMode } = useTheme();
   const {
     entries, setEntries, intervalMinutes, setIntervalMinutes,
     packPrice, setPackPrice, sticksPerPack, setSticksPerPack,
@@ -52,7 +55,7 @@ export default function SticksApp() {
   return (
     <div className="app-root">
       <div className="top-bar">
-        <div className="top-bar-icon">🚬</div>
+        <div className="top-bar-icon"><IconSticks /></div>
         <h1>{titles[page]}</h1>
         {page === 'home' && <div className="counter-chip">{todayCount} сегодня</div>}
       </div>
@@ -63,7 +66,7 @@ export default function SticksApp() {
         )}
         {page === 'history' && <HistoryPage entries={entries} onDelete={deleteEntry} />}
         {page === 'settings' && (
-          <SettingsPage intervalMinutes={intervalMinutes} setIntervalMinutes={setIntervalMinutes} entries={entries} onClear={clearAll} packPrice={packPrice} setPackPrice={setPackPrice} sticksPerPack={sticksPerPack} setSticksPerPack={setSticksPerPack} dailyLimit={dailyLimit} setDailyLimit={setDailyLimit} />
+          <SettingsPage intervalMinutes={intervalMinutes} setIntervalMinutes={setIntervalMinutes} entries={entries} onClear={clearAll} packPrice={packPrice} setPackPrice={setPackPrice} sticksPerPack={sticksPerPack} setSticksPerPack={setSticksPerPack} dailyLimit={dailyLimit} setDailyLimit={setDailyLimit} themeStyle={themeStyle} setThemeStyle={setThemeStyle} themeMode={themeMode} setThemeMode={setThemeMode} />
         )}
       </div>
 

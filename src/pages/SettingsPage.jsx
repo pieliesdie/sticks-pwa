@@ -1,10 +1,40 @@
 import getTodayCount from '../getTodayCount';
 
-export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entries, onClear, packPrice, setPackPrice, sticksPerPack, setSticksPerPack, dailyLimit, setDailyLimit }) {
+const STYLES = [
+  { value: 'current', label: 'По умолчанию' },
+  { value: 'material', label: 'Material' },
+  { value: 'fluent', label: 'Fluent' }
+];
+
+const MODES = [
+  { value: 'system', label: 'Система' },
+  { value: 'light', label: 'Светлая' },
+  { value: 'dark', label: 'Тёмная' }
+];
+
+export default function SettingsPage({ intervalMinutes, setIntervalMinutes, entries, onClear, packPrice, setPackPrice, sticksPerPack, setSticksPerPack, dailyLimit, setDailyLimit, themeStyle, setThemeStyle, themeMode, setThemeMode }) {
   const todayCount = getTodayCount(entries);
 
   return (
     <div className="page settings-page">
+      <section className="settings-section" aria-labelledby="appearance-title">
+        <h2 className="settings-title" id="appearance-title">Внешний вид</h2>
+        <div className="appearance-controls">
+          <div className="appearance-field">
+            <label htmlFor="theme-style">Стиль</label>
+            <select id="theme-style" value={themeStyle} onChange={e => setThemeStyle(e.target.value)}>
+              {STYLES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+          <div className="appearance-field">
+            <label htmlFor="theme-mode">Цветовая тема</label>
+            <select id="theme-mode" value={themeMode} onChange={e => setThemeMode(e.target.value)}>
+              {MODES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+        </div>
+      </section>
+
       <div className="settings-section">
         <div className="settings-title">Таймер</div>
         <div className="settings-card">

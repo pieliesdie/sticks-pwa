@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import stickNoun from '../components/stickNoun';
+import IconTrash from '../components/icons/IconTrash';
 
 export default function HistoryPage({ entries, onDelete }) {
   const [collapsedDays, setCollapsedDays] = useState({});
@@ -52,20 +53,21 @@ export default function HistoryPage({ entries, onDelete }) {
           <Virtuoso
             customScrollParent={scrollParent}
             data={grouped}
+            defaultItemHeight={76}
             overscan={200}
             itemContent={(gi, [day, list]) => {
-              const collapsed = collapsedDays[day];
+              const isToday = formatDay(day) === 'Сегодня';
+              const collapsed = collapsedDays[day] ?? !isToday;
               const hourCounts = Array(24).fill(0);
               list.forEach(e => hourCounts[e.date.getHours()]++);
                const maxCount = Math.max(...hourCounts, 1);
                const selectedHour = selectedHourMap[day];
-               const isToday = formatDay(day) === 'Сегодня';
 
               return (
                 <div key={day} className="day-group show" style={{ marginBottom: '16px' }}>
                   <button
                     className="day-header"
-                    onClick={() => setCollapsedDays(p => ({ ...p, [day]: !p[day] }))}
+                    onClick={() => setCollapsedDays(p => ({ ...p, [day]: !(p[day] ?? !isToday) }))}
                     aria-expanded={!collapsed}
                   >
                     <div className="day-header-left">
@@ -118,7 +120,7 @@ export default function HistoryPage({ entries, onDelete }) {
                                   </span>
                                   {(e.tag || gapMinutes !== null) && <span className="entry-meta">{[e.tag, gapMinutes !== null ? `Через ${gapMinutes} мин после предыдущей` : null].filter(Boolean).join(' · ')}</span>}
                                 </div>
-                                <button className="btn-delete" aria-label={`Удалить запись за ${new Date(e.iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`} onClick={() => onDelete(e.id)}>✕</button>
+                                <button className="btn-delete" aria-label={`Удалить запись за ${new Date(e.iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`} onClick={() => onDelete(e.id)}><IconTrash /></button>
                               </li>
                               );
                             })}

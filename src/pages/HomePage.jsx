@@ -3,6 +3,8 @@ import AddModal from '../components/AddModal';
 import useDialogFocus from '../components/useDialogFocus';
 import stickNoun from '../components/stickNoun';
 import getTodayCount from '../getTodayCount';
+import IconAdd from '../components/icons/IconAdd';
+import IconCalendar from '../components/icons/IconCalendar';
 
 const TAG_OPTIONS = [
   'Стресс', 'Кофе', 'Скука', 'Привычка', 'Перекур'
@@ -78,10 +80,10 @@ export default function HomePage({ entries, intervalMinutes, onAdd, showSnack, t
 
       <div className="home-actions">
         <button className="btn-filled home-btn" onClick={handleAddClick}>
-          <span aria-hidden="true">＋</span> Добавить сейчас
+          <IconAdd /> Добавить сейчас
         </button>
         <button className="btn-tonal home-btn" onClick={() => setShowModal(true)}>
-          Указать дату и время
+          <IconCalendar /> Указать дату и время
         </button>
         <button className="btn-text home-btn" onClick={checkTimer}>
           Проверить интервал
